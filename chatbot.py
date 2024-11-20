@@ -38,13 +38,13 @@ history_gemini = []
 history_openai = []
 
 @app.get("/gemini")
-def gemini_chat_bot(gemini_user_message: Optional[str] = None):
+def gemini_chat_bot(user_message: Optional[str] = None):
 
     # Maximum number of history messages to keep
     max_history_size = 2
     
     # Saving the user message
-    history_gemini.append({"role": "user", "parts": gemini_user_message})
+    history_gemini.append({"role": "user", "parts": user_message})
 
     # Limit history size by keeping only the last `max_history_size` messages
     if len(history_gemini) > max_history_size:
@@ -54,7 +54,7 @@ def gemini_chat_bot(gemini_user_message: Optional[str] = None):
 
     # Generating the response
     response = model.generate_content(
-        f"When you are answering to this message: '{gemini_full_message}' please say that you are Gemini",
+        f"Gemini: {gemini_full_message}",
         generation_config=genai.types.GenerationConfig(
             temperature=0.34,
         ),
@@ -64,13 +64,13 @@ def gemini_chat_bot(gemini_user_message: Optional[str] = None):
     gemini_model_response = response.text
 
     return {
-        "user": gemini_user_message,
+        "user": user_message,
         "model": gemini_model_response
     }
 
 
 @app.get("/openai")
-def openai_chat_bot(openai_user_message: Optional[str] = None):
+def openai_chat_bot(user_message: Optional[str] = None):
     # Initialize conversation with at least one message
     openai_messages = [{"role": "system", "content": "You are a helpful assistant."}]
 
@@ -84,7 +84,7 @@ def openai_chat_bot(openai_user_message: Optional[str] = None):
     if len(openai_messages) > max_history_size:
         openai_messages = openai_messages[-max_history_size:]
 
-    openai_messages.append({"role": "user", "content": f"When you are answering to this message: '{openai_user_message}' please say that you are OpenAI"})
+    openai_messages.append({"role": "user", "content": f"OpenAI: '{user_message}'"})
 
     try:
         # Make the OpenAI API call
@@ -100,7 +100,7 @@ def openai_chat_bot(openai_user_message: Optional[str] = None):
     history_openai.append({"role": "model", "content": openai_model_response})
     
     return {
-        "user": openai_user_message,
+        "user": user_message,
         "model": openai_model_response
     }
 
