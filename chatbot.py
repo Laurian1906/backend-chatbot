@@ -6,6 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from typing import Optional
 from fastapi import FastAPI
+from pydantic import BaseModel
+
+class APIRequest(BaseModel):
+    user_message: str
 
 # Config
 #OpenAI API
@@ -31,48 +35,65 @@ app.add_middleware(
     allow_headers=["*"],   
 )
 
-# Select model of Gemini
-model = genai.GenerativeModel("gemini-1.5-flash")
+# Create the model
+generation_config = {
+  "temperature": 0.45,
+  "top_p": 0.95,
+  "top_k": 40,
+  "max_output_tokens": 8192,
+  "response_mime_type": "text/plain",
+}
 
 history_gemini = []
 history_openai = []
 
 @app.get("/gemini")
-def gemini_chat_bot(user_message: Optional[str] = None):
-
-    # Maximum number of history messages to keep
-    max_history_size = 2
+def gemini_chat_bot(user_message: str):
+    print("I got the request, yay!")
     
     # Saving the user message
     history_gemini.append({"role": "user", "parts": user_message})
 
-    # Limit history size by keeping only the last `max_history_size` messages
-    if len(history_gemini) > max_history_size:
-        history_gemini.pop(0)  # Remove the oldest message if the history exceeds the limit
+    # Select model of Gemini
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-pro-002",
+        generation_config=generation_config
+    )
 
     gemini_full_message = "\n".join([f"{msg['role']}: {msg['parts']}" for msg in history_gemini])
 
-    # Generating the response
-    response = model.generate_content(
-        f"Gemini: {gemini_full_message}",
-        generation_config=genai.types.GenerationConfig(
-            temperature=0.34,
-        ),
-    )
+    try:
+        print("I am now generating the response")
+        
+        chat_session = model.start_chat(
+            history=history_gemini
+        )
+        
+        # Generating the response
+        response = chat_session.send_message(gemini_full_message + "If necessary format text with HTML as you would do in a div, put simply use <p> tags and <ul>, <li>, <b>, <i>, <u>. Do not use text formatting, just HTML, do not put ```html at the beggining of the response and ``` at the end of the response")
+        gemini_model_response = response.text
+        
+        history_gemini.append({"role": "model", "parts": gemini_model_response})
+        
+        print("I am now printing the response...")
+        return {
+            "user": user_message,
+            "model": gemini_model_response
+        }
+        
+    except Exception as e:
+        gemini_model_response = f"Error with Gemini response: {e}"
+        history_gemini.append({"role": "model", "parts": gemini_model_response})
     
-    history_gemini.append({"role": "model", "parts": response.text})
-    gemini_model_response = response.text
-
-    return {
-        "user": user_message,
-        "model": gemini_model_response
-    }
-
-
+        return {
+            "user": user_message,
+            "model": gemini_model_response
+        }
+    
 @app.get("/openai")
-def openai_chat_bot(user_message: Optional[str] = None):
+def openai_chat_bot(user_message: str):
     # Initialize conversation with at least one message
-    openai_messages = [{"role": "system", "content": "You are a helpful assistant."}]
+    openai_messages = [{"role": "system", "content": "DO NOT ROLEPLAY!! BE PROFESSIONAL"}]
 
     # Maximum number of history messages to keep
     max_history_size = 4
@@ -89,7 +110,7 @@ def openai_chat_bot(user_message: Optional[str] = None):
     try:
         # Make the OpenAI API call
         chat_completion = openai.ChatCompletion.create(
-            model="gpt-3.5", messages=openai_messages, temperature=0.3
+            model="gpt-3.5", messages=openai_messages, temperature=0.5
         )
         openai_model_response = chat_completion.choices[0].message["content"]
     except Exception as e:
