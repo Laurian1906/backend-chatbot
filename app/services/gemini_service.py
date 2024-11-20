@@ -17,7 +17,7 @@ def gemini_chat(user_message: str):
     
     try:
         chat_session = model.start_chat(history=history_gemini)
-        response = chat_session.send_message(gemini_full_message)
+        response = chat_session.send_message(gemini_full_message + "Please format your text like you will do in a div element in HTML with <p>,<ul>,<ol>,<li>,<b>,<i>,<u> and so on, when it is necessary to format. Do not put ```html at the beggining of the response or ``` at the end of the reponse")
         gemini_model_response = response.text
         history_gemini.append({"role": "model", "parts": gemini_model_response})
         
