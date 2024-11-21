@@ -22,5 +22,6 @@ def openai_chat(user_message: str):
         history_openai.append({"role":"user", "content": openai_model_response})
         return {"user": user_message, "model": openai_model_response}
     except Exception as e:
-        return {"user": user_message, "model": f"Error during OpenAI API Call: {e}"}
+        print(f"Error: {e}")
+        raise
         

@@ -10,3 +10,6 @@ setup_cors(app)
 
 app.include_router(gemini_router, prefix="/gemini")
 app.include_router(openai_router, prefix="/openai")
+
+if __name__ == "__main__":
+    print("Script is running from main.py!")

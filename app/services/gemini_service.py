@@ -9,7 +9,7 @@ def gemini_chat(user_message: str):
     history_gemini.append({"role": "user", "parts": user_message})
     
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro-002",
+        model_name="gemini-1.5-flash",
         generation_config=generation_config
     )
     
